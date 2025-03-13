@@ -17,4 +17,3 @@ A simple Streamlit app that answers questions about an uploaded document via Ope
    ```
    $ streamlit run streamlit_app.py
    ```
-
