@@ -125,9 +125,9 @@ else:
                 {  
                     "type": "azure_search",
                     "parameters": { 
-                        "index_name": "prms_content",
+                        "index_name": "cdccontentindex",
                         "endpoint": "https://dupcontensearch.search.windows.net",  
-                        "semantic_configuration": "prms-search",
+                        "semantic_configuration": "cdccontentsemcon",
                         "query_type": "semantic",
                         "fields_mapping": {},
                         "in_scope": True,
