@@ -1,2 +1,7 @@
 streamlit
 openai
+requests
+os
+pandas
+io
+bs4
