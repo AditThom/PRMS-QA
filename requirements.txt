@@ -1,6 +1,5 @@
 streamlit
 openai
 requests
-os
 pandas
 beautifulsoup4
