@@ -3,5 +3,4 @@ openai
 requests
 os
 pandas
-io
-bs4
+beautifulsoup4
