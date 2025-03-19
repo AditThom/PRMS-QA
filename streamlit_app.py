@@ -1,3 +1,4 @@
+import json
 import requests
 import streamlit as st
 from openai import AzureOpenAI
@@ -6,12 +7,15 @@ import pandas as pd
 import io
 import bs4
 from bs4 import BeautifulSoup
+import queue;
 
 # Load PRs into dataframe from csv file
 csv_file_path = "/workspaces/PRMS-QA/data/PR_SourceList.csv"
 if os.getenv("PR_SOURCELIST_CSV"):
     csv_file_path = os.getenv("PR_SOURCELIST_CSV")
 prs_df = pd.read_csv(csv_file_path,encoding='1252',header=0,names=['ID','Content','Question','Source'])
+
+
 
 # Show title and description.
 st.image("https://www.cdc.gov/TemplatePackage/5.0/img/logo/cdc-logo-tag-right.svg")
@@ -21,13 +25,19 @@ st.write(
     "Ask a question below and our friendly assistant will try and answer it! "
 )
 
+
+
 # Ask user for their OpenAI API key via `st.text_input`.
 # Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
 # via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
 openai_api_key = st.text_input("Azure OpenAI API Key", type="password",value=os.getenv("AZURE_OPENAI_KEY"))
+st.session_state['numkeep'] = st.number_input("Chat Depth:", min_value=1, max_value=5, value=3, step=None, format=None, key=None, help=None, on_change=None, args=None, kwargs=None, placeholder=None, disabled=False, label_visibility="visible")
+
 if not openai_api_key:
     st.info("Please add your Azure OpenAI API key to continue.", icon="🗝️")
 else:
+    if 'chat' not in st.session_state:
+        st.session_state['chat']= []
 
     # Create an OpenAI client.
     client = AzureOpenAI(
@@ -96,6 +106,10 @@ else:
                 {
                     "role": "user",
                     "content": f"Use only the data sources provided. Be kind and gentle with the user! Here's a question:{question}.  At the end, list your cited documents in a numbered list by title.  Also consider the information below: {document_content}. If you do use the information, please cite the source as \"User information provided\".",
+                },
+                {
+                    "role": "assistant",
+                    "content": f"Use this previous chat context if present: {st.session_state['chat']}.",
                 }
             ]
         else:
@@ -107,13 +121,18 @@ else:
                 {
                     "role": "user",
                     "content": f"Use only the data sources provided. Be kind and gentle with the user! Here's a question:{question}.  At the end, list your cited documents in a numbered list by title",
+                },
+                {
+                    "role": "assistant",
+                    "content": f"Use this previous chat context if present: {st.session_state['chat']}.",
                 }
             ]
         #get the key from the codespace secret
         search_key = os.getenv("AZURE_SEARCH_KEY")
         # Generate an answer using the OpenAI API.
+        print(messages)
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=messages,
             stream=False, 
             max_tokens=800,  
@@ -147,6 +166,14 @@ else:
         )
 
         responseContent = response.choices[0].message.content
+       
+        # Append the user question and assistant response to the chat history.
+        if len(st.session_state['chat']) >= st.session_state['numkeep']:
+            st.session_state['chat'].pop(0)
+        
+        st.session_state['chat'].append(f"User question: {question}" + f" Agent response: {responseContent}")
+
+       
         # Stream the response to the app using `st.write_stream`.
         st.write(responseContent)       
 
@@ -168,3 +195,4 @@ else:
                     st.write("\nPR:" + str(row['ID']) + '-' + str(row['Question']))
                     st.write(str(row['Content']) + "\n")
                     st.markdown("<br>", unsafe_allow_html=True)
+
