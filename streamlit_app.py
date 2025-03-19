@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 
 # Load PRs into dataframe from csv file
 csv_file_path = "/workspaces/PRMS-QA/data/PR_SourceList.csv"
+if os.getenv("PR_SOURCELIST_CSV"):
+    csv_file_path = os.getenv("PR_SOURCELIST_CSV")
 prs_df = pd.read_csv(csv_file_path,encoding='1252',header=0,names=['ID','Content','Question','Source'])
 
 # Show title and description.
